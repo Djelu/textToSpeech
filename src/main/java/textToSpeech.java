@@ -8,6 +8,7 @@ import com.google.cloud.texttospeech.v1.SynthesizeSpeechResponse;
 import com.google.cloud.texttospeech.v1.TextToSpeechClient;
 import com.google.cloud.texttospeech.v1.VoiceSelectionParams;
 import com.google.protobuf.ByteString;
+import javafx.beans.binding.StringBinding;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -18,9 +19,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class textToSpeech {
@@ -28,6 +32,8 @@ public class textToSpeech {
 
     public static void main(String... args) throws Exception {
         try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
+
+            int parts = 8; //Разделить на сколько потоков
 
             //Форматы входа и выхода
             Charset charset = StandardCharsets.UTF_8;
@@ -57,13 +63,33 @@ public class textToSpeech {
                     .map(path -> new Object[]{getNameWithoutExt(path.toAbsolutePath().toString()), textToString(path, charset)})
                     .filter(objects -> Arrays.stream(objects).allMatch(Objects::nonNull))
                     .forEach(objects -> {
-                        SynthesisInput input = SynthesisInput.newBuilder().setText((String) objects[1]).build();
-                        SynthesizeSpeechResponse response =
-                                textToSpeechClient.synthesizeSpeech(input, voice, audioConfig);
-                        ByteString audioContents = response.getAudioContent();
+                        List<String> strings = splitText((String) objects[1], parts);
+                        List<ByteString> audioContents = strings.parallelStream()
+                                .map(textPart -> {
+                                    SynthesisInput input = SynthesisInput.newBuilder().setText((String) objects[1]).build();
+                                    SynthesizeSpeechResponse response =
+                                            textToSpeechClient.synthesizeSpeech(input, voice, audioConfig);
+                                    return response.getAudioContent();
+                                })
+                                .collect(Collectors.toList());
                         speechToFile(audioContents, (String) objects[0], encType);
                     });
+
         }
+    }
+
+    private static List<String> splitText(String text, int parts){
+        List<String> result = new ArrayList<>();
+        List<String> words = Arrays.asList(text.split(" "));
+        int wordsInPart = words.size() / parts;
+        IntStream.range(0, parts).forEach(i -> {
+            int firstEdge = i * wordsInPart;
+            int lastEdge = i < parts - 1
+                    ? (i + 1) * wordsInPart
+                    : words.size() - 1;
+            result.add(String.join(" ", words.subList(firstEdge, lastEdge)));
+        });
+        return result;
     }
 
     private static String textToString(Path path, Charset charset) {
@@ -76,11 +102,25 @@ public class textToSpeech {
         }
     }
 
-    private static void speechToFile(ByteString audioContents, String fileName, AudioEncoding encType) {
+    private static void speechToFile(List<ByteString> audioContents, String fileName, AudioEncoding encType)  {
         String newFileName = fileName + "."+encType.toString().toLowerCase();
 
         try (OutputStream out = new FileOutputStream(newFileName)) {
-            out.write(audioContents.toByteArray());
+            try {
+                final ByteString[] allAudioContent = {null};
+                audioContents.forEach(audioContent -> {
+                    if(allAudioContent[0] == null){
+                        allAudioContent[0] = audioContent;
+                    }else {
+                        allAudioContent[0].concat(audioContent);
+                    }
+
+                });
+
+                out.write(allAudioContent[0].toByteArray());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             System.out.println(String.format("Audio content written to file \"%s\"", newFileName));
         } catch (IOException e) {
             e.printStackTrace();
