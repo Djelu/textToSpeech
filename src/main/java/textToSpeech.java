@@ -77,11 +77,7 @@ public class textToSpeech {
     }
 
     private static void speechToFile(ByteString audioContents, String fileName, AudioEncoding encType) {
-        String newFileName = fileName;
-
-        if (encType.equals(AudioEncoding.MP3)) {
-            newFileName += ".mp3";
-        }
+        String newFileName = fileName + "."+encType.toString().toLowerCase();
 
         try (OutputStream out = new FileOutputStream(newFileName)) {
             out.write(audioContents.toByteArray());
