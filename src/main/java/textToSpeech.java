@@ -29,18 +29,24 @@ public class textToSpeech {
     public static void main(String... args) throws Exception {
         try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
 
+            //Настройки голоса
             VoiceSelectionParams voice =
                     VoiceSelectionParams.newBuilder()
                             .setLanguageCode("ru-RU")
                             .setSsmlGender(SsmlVoiceGender.FEMALE)
+                            .setName("ru-RU-Wavenet-C")
                             .build();
 
+            //Форматы входа и выхода
             Charset charset = StandardCharsets.UTF_8;
             AudioEncoding encType = AudioEncoding.MP3;
+
+            //Директория текстов
+            String rootFolder = "C:\\Users\\Djelu\\Desktop\\333";
+
             AudioConfig audioConfig =
                     AudioConfig.newBuilder().setAudioEncoding(encType).build();
 
-            String rootFolder = "C:\\Users\\Djelu\\Desktop\\333";
             Files.walk(Paths.get(rootFolder))
                     .filter(Files::isRegularFile)
                     .map(path -> new Object[]{getNameWithoutExt(path.toAbsolutePath().toString()), textToString(path, charset)})
