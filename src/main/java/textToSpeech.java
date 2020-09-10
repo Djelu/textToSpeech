@@ -45,7 +45,11 @@ public class textToSpeech {
             String rootFolder = "C:\\Users\\Djelu\\Desktop\\333";
 
             AudioConfig audioConfig =
-                    AudioConfig.newBuilder().setAudioEncoding(encType).build();
+                    AudioConfig.newBuilder()
+                            .setAudioEncoding(encType)
+                            .setSpeakingRate(1.75)//Скорость
+                            .setPitch(1.5)
+                            .build();
 
             Files.walk(Paths.get(rootFolder))
                     .filter(Files::isRegularFile)
