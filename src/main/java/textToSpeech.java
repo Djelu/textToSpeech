@@ -63,7 +63,6 @@ public class textToSpeech {
 
     private static String textToString(Path path, Charset charset) {
         try {
-            charset = StandardCharsets.UTF_8;
             return Files.lines(path.toAbsolutePath(), charset)
                     .collect(Collectors.joining(" "));
         } catch (IOException e) {
