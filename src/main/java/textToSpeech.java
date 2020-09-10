@@ -13,6 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,10 +31,11 @@ public class textToSpeech {
 
             VoiceSelectionParams voice =
                     VoiceSelectionParams.newBuilder()
-                            .setLanguageCode("en-US")
-                            .setSsmlGender(SsmlVoiceGender.NEUTRAL)
+                            .setLanguageCode("ru-RU")
+                            .setSsmlGender(SsmlVoiceGender.FEMALE)
                             .build();
 
+            Charset charset = StandardCharsets.UTF_8;
             AudioEncoding encType = AudioEncoding.MP3;
             AudioConfig audioConfig =
                     AudioConfig.newBuilder().setAudioEncoding(encType).build();
@@ -41,21 +43,22 @@ public class textToSpeech {
             String rootFolder = "C:\\Users\\Djelu\\Desktop\\333";
             Files.walk(Paths.get(rootFolder))
                     .filter(Files::isRegularFile)
-                    .map(path -> new Object[]{getNameWithoutExt(path.toAbsolutePath().toString()), textToString(path)})
+                    .map(path -> new Object[]{getNameWithoutExt(path.toAbsolutePath().toString()), textToString(path, charset)})
                     .filter(objects -> Arrays.stream(objects).allMatch(Objects::nonNull))
                     .forEach(objects -> {
-                        SynthesisInput input = SynthesisInput.newBuilder().setText((String)objects[1]).build();
+                        SynthesisInput input = SynthesisInput.newBuilder().setText((String) objects[1]).build();
                         SynthesizeSpeechResponse response =
                                 textToSpeechClient.synthesizeSpeech(input, voice, audioConfig);
                         ByteString audioContents = response.getAudioContent();
-                        speechToFile(audioContents, (String)objects[0], encType);
+                        speechToFile(audioContents, (String) objects[0], encType);
                     });
         }
     }
 
-    private static String textToString(Path path) {
+    private static String textToString(Path path, Charset charset) {
         try {
-            return Files.lines(path.toAbsolutePath(), StandardCharsets.UTF_8)
+            charset = StandardCharsets.UTF_8;
+            return Files.lines(path.toAbsolutePath(), charset)
                     .collect(Collectors.joining(" "));
         } catch (IOException e) {
             e.printStackTrace();
