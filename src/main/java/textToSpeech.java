@@ -29,6 +29,13 @@ public class textToSpeech {
     public static void main(String... args) throws Exception {
         try (TextToSpeechClient textToSpeechClient = TextToSpeechClient.create()) {
 
+            //Форматы входа и выхода
+            Charset charset = StandardCharsets.UTF_8;
+            AudioEncoding encType = AudioEncoding.MP3;
+
+            //Директория текстов
+            String rootFolder = "C:\\Users\\Djelu\\Desktop\\333";
+
             //Настройки голоса
             VoiceSelectionParams voice =
                     VoiceSelectionParams.newBuilder()
@@ -37,13 +44,7 @@ public class textToSpeech {
                             .setName("ru-RU-Wavenet-C")
                             .build();
 
-            //Форматы входа и выхода
-            Charset charset = StandardCharsets.UTF_8;
-            AudioEncoding encType = AudioEncoding.MP3;
-
-            //Директория текстов
-            String rootFolder = "C:\\Users\\Djelu\\Desktop\\333";
-
+            //Остальные настройки
             AudioConfig audioConfig =
                     AudioConfig.newBuilder()
                             .setAudioEncoding(encType)
